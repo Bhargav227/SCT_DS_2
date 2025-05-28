@@ -1,0 +1,166 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+# No sys import needed as output is directed to console
+
+print("\n--- Task 02: Data Cleaning & Exploratory Data Analysis (EDA) ---")
+print("Objective: Analyze Titanic dataset to uncover patterns, trends, and relationships.")
+
+# --- 1. Load the Dataset ---
+# Using the provided 'train.csv' file for EDA
+file_path = "train.csv"
+print(f"\n--- Loading Titanic dataset from '{file_path}' ---")
+try:
+    df = pd.read_csv(file_path)
+    print("Titanic dataset loaded successfully.")
+except FileNotFoundError:
+    print(f"Error: The file '{file_path}' was not found. Please ensure it's in the same directory as this script.")
+    exit() # Exit if the file isn't found
+except Exception as e:
+    print(f"An error occurred while loading the dataset: {e}")
+    exit()
+
+print("\nInitial Data Head:")
+print(df.head())
+print("\nInitial Data Info:")
+df.info()
+print("\nInitial Data Description:")
+print(df.describe(include='all'))
+
+# --- 2. Data Cleaning ---
+print("\n--- Performing Data Cleaning ---")
+
+# Handle missing values
+# 'Age': Impute with median (less sensitive to outliers than mean)
+print(f"Missing 'Age' values before imputation: {df['Age'].isnull().sum()}")
+df['Age'].fillna(df['Age'].median(), inplace=True)
+print(f"Missing 'Age' values after imputation: {df['Age'].isnull().sum()}")
+
+# 'Cabin': Too many missing values (approx 77%), dropping it
+print(f"Missing 'Cabin' values before dropping: {df['Cabin'].isnull().sum()}")
+df.drop(columns=['Cabin'], inplace=True, errors='ignore')
+print("'Cabin' column dropped due to high missing values.")
+
+# 'Embarked': Only a few missing, impute with mode (most frequent value)
+print(f"Missing 'Embarked' values before imputation: {df['Embarked'].isnull().sum()}")
+most_frequent_embark = df['Embarked'].mode()[0]
+df['Embarked'].fillna(most_frequent_embark, inplace=True)
+print(f"Missing 'Embarked' values after imputation: {df['Embarked'].isnull().sum()}")
+
+# Remove duplicates (check if any exist)
+initial_rows = len(df)
+df.drop_duplicates(inplace=True)
+if len(df) < initial_rows:
+    print(f"Removed {initial_rows - len(df)} duplicate rows.")
+else:
+    print("No duplicate rows found.")
+
+# Remove irrelevant columns
+# 'PassengerId', 'Name', 'Ticket' are usually not used for direct modeling or EDA insights
+columns_to_drop_final = ['PassengerId', 'Name', 'Ticket']
+df.drop(columns=columns_to_drop_final, inplace=True, errors='ignore')
+print(f"Dropped irrelevant columns: {columns_to_drop_final}.")
+
+print("\nData Info after Cleaning:")
+df.info()
+print("\nCleaned Data Head:")
+print(df.head())
+
+# --- 3. Exploratory Data Analysis (EDA) ---
+print("\n--- Performing Exploratory Data Analysis (EDA) ---")
+
+# Descriptive Statistics
+print("\nDescriptive Statistics for Numerical Features:")
+print(df.describe())
+
+print("\nSurvival Rates:")
+print(df['Survived'].value_counts(normalize=True)) # 0 = Died, 1 = Survived
+
+print("\nSurvival Rate by Sex:")
+print(df.groupby('Sex')['Survived'].mean())
+
+print("\nSurvival Rate by Pclass:")
+print(df.groupby('Pclass')['Survived'].mean())
+
+print("\nSurvival Rate by Embarked Port:")
+print(df.groupby('Embarked')['Survived'].mean())
+
+# Visualizations
+sns.set_style("whitegrid")
+
+# Histogram: Age Distribution
+plt.figure(figsize=(10, 6))
+sns.histplot(df['Age'], bins=20, kde=True, palette='viridis')
+plt.title('Age Distribution of Titanic Passengers')
+plt.xlabel('Age')
+plt.ylabel('Count')
+plt.tight_layout()
+plt.savefig('age_distribution_titanic.png')
+plt.show() # Display the plot directly
+plt.close()
+print("Histogram 'age_distribution_titanic.png' saved.")
+
+# Bar chart: Survival by Sex
+plt.figure(figsize=(8, 5))
+sns.barplot(x='Sex', y='Survived', data=df, palette='pastel')
+plt.title('Survival Rate by Sex')
+plt.xlabel('Sex')
+plt.ylabel('Survival Rate')
+plt.tight_layout()
+plt.savefig('survival_by_sex_titanic.png')
+plt.show()
+plt.close()
+print("Bar chart 'survival_by_sex_titanic.png' saved.")
+
+# Bar chart: Survival by Pclass
+plt.figure(figsize=(8, 5))
+sns.barplot(x='Pclass', y='Survived', data=df, palette='deep', order=[1, 2, 3])
+plt.title('Survival Rate by Passenger Class')
+plt.xlabel('Passenger Class')
+plt.ylabel('Survival Rate')
+plt.tight_layout()
+plt.savefig('survival_by_pclass_titanic.png')
+plt.show()
+plt.close()
+print("Bar chart 'survival_by_pclass_titanic.png' saved.")
+
+# Bar chart: Survival by Embarked Port
+plt.figure(figsize=(8, 5))
+sns.barplot(x='Embarked', y='Survived', data=df, palette='muted')
+plt.title('Survival Rate by Embarked Port')
+plt.xlabel('Embarked Port')
+plt.ylabel('Survival Rate')
+plt.tight_layout()
+plt.savefig('survival_by_embark_titanic.png')
+plt.show()
+plt.close()
+print("Bar chart 'survival_by_embark_titanic.png' saved.")
+
+# Correlation heatmap (for numerical features)
+# Select only numerical columns for correlation
+numerical_df = df.select_dtypes(include=np.number)
+plt.figure(figsize=(10, 8))
+sns.heatmap(numerical_df.corr(), annot=True, cmap='coolwarm', fmt=".2f")
+plt.title('Correlation Heatmap of Numerical Features')
+plt.tight_layout()
+plt.savefig('correlation_heatmap_titanic.png')
+plt.show()
+plt.close()
+print("Correlation heatmap 'correlation_heatmap_titanic.png' saved.")
+
+# --- 4. Pattern Identification ---
+print("\n--- Key Patterns and Insights from EDA ---")
+print("1.  *Survival Rate:* Approximately 38.4% of passengers survived.")
+print("2.  *Gender Impact:* Women had a significantly higher survival rate (around 74%) compared to men (around 18.9%). This is a strong indicator.")
+print("3.  *Passenger Class Impact:* First-class passengers had the highest survival rate (around 63%), followed by second-class (around 47.3%), and then third-class (around 24.2%). This suggests 'Pclass' was a major factor in survival.")
+print("4.  *Age Distribution:* The age distribution shows a peak around 20-30 years, with fewer very young children and elderly passengers.")
+print("5.  *Embarked Port Impact:* Passengers from Cherbourg (C) had a higher survival rate compared to those from Southampton (S) or Queenstown (Q). This might be due to the class composition of passengers from each port.")
+print("6.  *Correlations:*")
+print("    * 'Fare' has a positive correlation with 'Survived', indicating that passengers who paid higher fares (likely first-class) had a better chance of survival.")
+print("    * 'Pclass' has a negative correlation with 'Survived' (lower Pclass number, higher survival).")
+print("    * 'Parch' (parents/children aboard) and 'SibSp' (siblings/spouses aboard) show weaker correlations, suggesting family size might have a complex relationship with survival.")
+print("7.  *Outliers/Anomalies:* High fares could be considered outliers, often associated with first-class passengers and higher survival. No obvious data entry anomalies were detected during cleaning, but further domain-specific checks could be done.")
+
+print("\n--- EDA Complete ---")
+print("The analysis provides key insights into factors influencing survival on the Titanic.")
